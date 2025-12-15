@@ -8,6 +8,8 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
+#include "Kismet/KismetMathLibrary.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
 // Sets default values for this component's properties
@@ -38,15 +40,19 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	if (PlayerPawn && GrapplePoint)
 	{
-		if (FVector::Dist(PlayerPawn->GetActorTransform().GetLocation(), GrapplePoint->GetActorTransform().GetLocation()) > 100.f)
+		if (FVector::Dist(PlayerPawn->GetActorTransform().GetLocation(), GrapplePoint->GetActorTransform().GetLocation()) > GrappleReleaseRange)
 		{
-			GrapplePoint->Destroy();
-			GrapplePoint = nullptr;
+			FVector GrapplePointPosition = GrapplePoint->GetActorLocation();
+			FVector PlayerPosition = PlayerCharacter->GetActorLocation();
+			FVector Direction = (GrapplePointPosition - PlayerPosition).GetSafeNormal();
+			MovementComponent->Velocity = Direction * GrappleSpeed;
 
-			if (ACharacter* PlayerCharacter = Cast<ACharacter>(PlayerPawn))
-			{
-				PlayerCharacter->GetCharacterMovement()->GravityScale = 1.f;
-			}
+			DrawDebugSphere(GetWorld(), GrapplePointPosition, 12.f, 16, FColor::Green, false, 0.f);
+			DrawDebugLine(GetWorld(), PlayerPosition, GrapplePointPosition, FColor::Green, false, 0.f);
+		}
+		else
+		{
+			CancelGrapple();
 		}
 	}
 }
@@ -58,33 +64,23 @@ void UGrappleHookController::HandleUseGrappleHook()
 	{
 		if (GrapplePoint)
 		{
-			GrapplePoint->Destroy();
+			UE_LOG(GrappleHookLog, Error, TEXT("Grapple is already active!"));
+			return;
 		}
 		
 		FHitResult* HitResult = GrappleHookLineTrace();
 
 		if (HitResult)
 		{
-			FVector ImpactPoint = HitResult->ImpactPoint;
-			AActor* HitActor = HitResult->GetActor();
+			SetupGrapplePointActor(HitResult->ImpactPoint, HitResult->GetActor());
 
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = GetOwner();
-			SpawnParams.SpawnCollisionHandlingOverride =
-				ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-			GrapplePoint = GetWorld()->SpawnActor<AActor>(
-				AActor::StaticClass(),
-				ImpactPoint,
-				FRotator::ZeroRotator,
-				SpawnParams
-			);
-			
-			UE_LOG(GrappleHookLog, Warning, TEXT("Grapple! %s"), *ImpactPoint.ToString());
-
-			if (ACharacter* PlayerCharacter = Cast<ACharacter>(PlayerPawn))
+			if (PlayerCharacter && MovementComponent)
 			{
-				PlayerCharacter->GetCharacterMovement()->GravityScale = 0.f;
+				PreviousGravityScale = MovementComponent->GravityScale;
+
+				PlayerController->SetIgnoreMoveInput(true);
+				MovementComponent->SetMovementMode(MOVE_Flying);
+				MovementComponent->GravityScale = 0.f;
 			}
 		}
 		else
@@ -93,6 +89,56 @@ void UGrappleHookController::HandleUseGrappleHook()
 		}
 	}
 }
+
+
+void UGrappleHookController::CancelGrapple()
+{
+	if (GrapplePoint)
+	{
+		GrapplePoint->Destroy();
+		GrapplePoint = nullptr;
+	}
+
+	PlayerController->SetIgnoreMoveInput(false);
+
+	if (MovementComponent)
+	{
+		MovementComponent->SetMovementMode(MOVE_Falling);
+		MovementComponent->GravityScale = PreviousGravityScale ? PreviousGravityScale : 1.f;
+	}
+}
+
+
+void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, AActor* HitActor)
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = GetOwner();
+	SpawnParams.SpawnCollisionHandlingOverride =
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	GrapplePoint = GetWorld()->SpawnActor<AActor>(
+		AActor::StaticClass(),
+		ImpactPoint,
+		FRotator::ZeroRotator,
+		SpawnParams
+	);
+
+	if (!GrapplePoint->GetRootComponent())
+	{
+		USceneComponent* Root = NewObject<USceneComponent>(GrapplePoint, TEXT("Root"));
+		Root->RegisterComponent();
+		GrapplePoint->SetRootComponent(Root);
+	}
+
+	GrapplePoint->SetActorLocation(ImpactPoint);
+
+	FAttachmentTransformRules AttachRules(EAttachmentRule::KeepWorld, true);
+	GrapplePoint->AttachToActor(HitActor, AttachRules);
+	
+	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple! %s"), *ImpactPoint.ToString());
+	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple Point: %s"), *GrapplePoint->GetActorLocation().ToString());
+}
+
 
 FHitResult* UGrappleHookController::GrappleHookLineTrace()
 {
@@ -137,6 +183,12 @@ void UGrappleHookController::SetupGrappleHookInput()
 	//Store a reference to the Player's PlayerController
 	PlayerController = Cast<APlayerController>(PlayerPawn->GetController());
 	checkf(PlayerController, TEXT("Unable to get reference to the Local Player's PlayerController"));
+
+	PlayerCharacter = Cast<ACharacter>(PlayerPawn);
+	checkf(PlayerCharacter, TEXT("Unable to get reference to the Local Player's Character"));
+
+	MovementComponent = PlayerCharacter->GetCharacterMovement();
+	checkf(MovementComponent, TEXT("Unable to get reference to the Local Player's CharacterMovementComponent"));
 	
 	//Get Local Player
 	TObjectPtr<ULocalPlayer> LocalPlayer = PlayerController->GetLocalPlayer();
@@ -152,6 +204,7 @@ void UGrappleHookController::SetupGrappleHookInput()
 	
 	checkf(InputMappingContext, TEXT("InputMappingContext was not specified"));
 	InputSubsystem->AddMappingContext(InputMappingContext, 0);
+	
 
 	//Bind input action, only attempt to bind if valid value was provided
 	if (ActionGrappleHook)
