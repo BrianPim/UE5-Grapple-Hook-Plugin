@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Copyright (c) 2025 Brian Pimentel
 
 #pragma once
 
@@ -7,6 +7,7 @@
 #include "GrappleHookController.generated.h"
 
 
+class UInputMappingContext;
 class UInputAction;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -27,6 +28,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 							   FActorComponentTickFunction* ThisTickFunction) override;
 
+	//Input Mapping Context to use
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Input")
+	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
+	
 	void SetupGrappleHookInput();
 	
 protected:
@@ -48,6 +53,10 @@ private:
 	UPROPERTY()
 	TObjectPtr<UEnhancedInputComponent> EnhancedInputComponent = nullptr;
 
+	//Used to store a reference to the pawn we are controlling
+	UPROPERTY()
+	TObjectPtr<APlayerController> PlayerController = nullptr;
+	
 	//Used to store a reference to the pawn we are controlling
 	UPROPERTY()
 	TObjectPtr<APawn> PlayerCharacter = nullptr;
