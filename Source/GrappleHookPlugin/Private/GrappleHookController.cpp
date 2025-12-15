@@ -5,6 +5,8 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GrappleHookLog.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
@@ -34,29 +36,106 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	if (PlayerPawn && GrapplePoint)
+	{
+		if (FVector::Dist(PlayerPawn->GetActorTransform().GetLocation(), GrapplePoint->GetActorTransform().GetLocation()) > 100.f)
+		{
+			GrapplePoint->Destroy();
+			GrapplePoint = nullptr;
+
+			if (ACharacter* PlayerCharacter = Cast<ACharacter>(PlayerPawn))
+			{
+				PlayerCharacter->GetCharacterMovement()->GravityScale = 1.f;
+			}
+		}
+	}
 }
 
 
 void UGrappleHookController::HandleUseGrappleHook()
 {
-	if (PlayerCharacter)
+	if (PlayerPawn && PlayerController)
 	{
+		if (GrapplePoint)
+		{
+			GrapplePoint->Destroy();
+		}
 		
-		UE_LOG(GrappleHookLog, Warning, TEXT("Grapple!"))
-	
+		FHitResult* HitResult = GrappleHookLineTrace();
+
+		if (HitResult)
+		{
+			FVector ImpactPoint = HitResult->ImpactPoint;
+			AActor* HitActor = HitResult->GetActor();
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = GetOwner();
+			SpawnParams.SpawnCollisionHandlingOverride =
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			GrapplePoint = GetWorld()->SpawnActor<AActor>(
+				AActor::StaticClass(),
+				ImpactPoint,
+				FRotator::ZeroRotator,
+				SpawnParams
+			);
+			
+			UE_LOG(GrappleHookLog, Warning, TEXT("Grapple! %s"), *ImpactPoint.ToString());
+
+			if (ACharacter* PlayerCharacter = Cast<ACharacter>(PlayerPawn))
+			{
+				PlayerCharacter->GetCharacterMovement()->GravityScale = 0.f;
+			}
+		}
+		else
+		{
+			UE_LOG(GrappleHookLog, Error, TEXT("No Grapple Hit!"));
+		}
 	}
+}
+
+FHitResult* UGrappleHookController::GrappleHookLineTrace()
+{
+	FVector CameraLocation;
+	FRotator CameraRotation;
+
+	PlayerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+
+	FVector Normal = CameraRotation.Vector().GetSafeNormal();
+		
+	FHitResult HitResult;
+
+	FVector CastStart = CameraLocation;
+	FVector CastEnd = CameraLocation + Normal * MaxGrappleRange;
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(PlayerPawn);
+
+	bool GrappleHit = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		CastStart,
+		CastEnd,
+		ECC_Visibility,
+		Params
+	);
+	
+	if (GrappleHit)
+	{
+		return &HitResult;
+	}
+	
+	return nullptr;
 }
 
 
 void UGrappleHookController::SetupGrappleHookInput()
 {
 	//Store a reference to the Player's Pawn
-	PlayerCharacter = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	checkf(PlayerCharacter, TEXT("Unable to get reference to the Local Player's Character Pawn"));
+	PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+	checkf(PlayerPawn, TEXT("Unable to get reference to the Local Player's Character Pawn"));
 
 	//Store a reference to the Player's PlayerController
-	PlayerController = Cast<APlayerController>(PlayerCharacter->GetController());
+	PlayerController = Cast<APlayerController>(PlayerPawn->GetController());
 	checkf(PlayerController, TEXT("Unable to get reference to the Local Player's PlayerController"));
 	
 	//Get Local Player
@@ -71,7 +150,7 @@ void UGrappleHookController::SetupGrappleHookInput()
 		LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
 	checkf(InputSubsystem, TEXT("Unable to get reference to the EnhancedInputLocalPlayerSubsystem"));
 	
-	checkf(InputMappingContext, TEXT("InputMappingContext was not specified"))
+	checkf(InputMappingContext, TEXT("InputMappingContext was not specified"));
 	InputSubsystem->AddMappingContext(InputMappingContext, 0);
 
 	//Bind input action, only attempt to bind if valid value was provided
@@ -81,10 +160,10 @@ void UGrappleHookController::SetupGrappleHookInput()
 	}
 	else
 	{
-		UE_LOG(GrappleHookLog, Error, TEXT("Grapple Input Missing!"))
+		UE_LOG(GrappleHookLog, Error, TEXT("Grapple Input Missing!"));
 	}
 
-	UE_LOG(GrappleHookLog, Display, TEXT("Grapple Setup Complete!"))
+	UE_LOG(GrappleHookLog, Display, TEXT("Grapple Setup Complete!"));
 }
 
 

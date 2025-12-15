@@ -40,10 +40,12 @@ protected:
 
 	void HandleUseGrappleHook();
 
+	FHitResult* GrappleHookLineTrace();
+
 private:
 
 	//Default
-	static constexpr float BaseMaxGrappleRange = 1000.0f;
+	static constexpr float BaseMaxGrappleRange = 10000.0f;
 
 	//Grapple Range value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
@@ -59,7 +61,9 @@ private:
 	
 	//Used to store a reference to the pawn we are controlling
 	UPROPERTY()
-	TObjectPtr<APawn> PlayerCharacter = nullptr;
+	TObjectPtr<APawn> PlayerPawn = nullptr;
 
-	FVector GrapplePoint = FVector(0.f, 0.f, 0.f);
+	//Used to store a reference to where the Grapple hit. An actor because we want to dynamically track the destination if we've grappled to a moving object
+	UPROPERTY()
+	TObjectPtr<AActor> GrapplePoint = nullptr;
 };
