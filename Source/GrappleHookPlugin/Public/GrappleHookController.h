@@ -12,16 +12,16 @@ class UInputMappingContext;
 class UInputAction;
 
 
+//Delegate for weapon being fired.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FGrappleEvent);
+
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class GRAPPLEHOOKPLUGIN_API UGrappleHookController : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-
-	//Input Action to map to grapple hook
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
-	TObjectPtr<UInputAction> ActionGrappleHook = nullptr;
 	
 	// Sets default values for this component's properties
 	UGrappleHookController();
@@ -30,11 +30,25 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 							   FActorComponentTickFunction* ThisTickFunction) override;
 
+	//Input Action to map to grapple hook
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
+	TObjectPtr<UInputAction> ActionGrappleHook = nullptr;
+	
 	//Input Mapping Context to use
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
+
+	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is aiming at a valid target."))
+	bool HasValidGrappleTarget();
 	
 	void SetupGrappleHookInput();
+
+	//Delegates
+	UPROPERTY(BlueprintAssignable, Category = "Grapple Hook", meta = (ToolTip = "Hook up additional functionality to this."))
+	FGrappleEvent OnGrappleStart;
+
+	UPROPERTY(BlueprintAssignable, Category = "Grapple Hook", meta = (ToolTip = "Hook up additional functionality to this."))
+	FGrappleEvent OnGrappleEnd;
 	
 protected:
 	// Called when the game starts
@@ -45,7 +59,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Grapple Hook")
 	void CancelGrapple();
 
-	void SetupGrapplePointActor(FVector ImpactPoint, AActor* HitActor);
+	void SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent);
 
 	FHitResult* GrappleHookLineTrace();
 
@@ -53,8 +67,10 @@ private:
 
 	//Defaults
 	static constexpr float BaseMaxGrappleRange = 10000.0f;
-	static constexpr float BaseGrappleSpeed = 1000.0f;
-	static constexpr float BaseGrappleReleaseRange = 100.0f;
+	static constexpr float BaseMaxSpeed = 2000.0f;
+	static constexpr float BaseInitialSpeed = 500.0f;
+	static constexpr float BaseSpeedLerpDuration = 1.0f;
+	static constexpr float BaseReleaseRange = 100.0f;
 
 	//Grapple Range value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
@@ -62,11 +78,19 @@ private:
 
 	//Grapple Speed value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
-	float GrappleSpeed = BaseGrappleSpeed;
+	float MaxSpeed = BaseMaxSpeed;
+
+	//Grapple Speed value, can be modified via BP
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
+	float InitialSpeed = BaseInitialSpeed;
+
+	//Grapple Speed value, can be modified via BP
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
+	float SpeedLerpDuration = BaseSpeedLerpDuration;
 
 	//Grapple Release Range value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
-	float GrappleReleaseRange = BaseGrappleReleaseRange;
+	float ReleaseRange = BaseReleaseRange;
 
 	//Used to store a reference to the InputComponent cast to an EnhancedInputComponent
 	UPROPERTY()
@@ -93,5 +117,8 @@ private:
 	TObjectPtr<AActor> GrapplePoint = nullptr;
 
 
-	float PreviousGravityScale = 0.f;
+	float CurrentSpeed = InitialSpeed;
+	float SpeedLerpElapsed = 0.0f;
+	
+	float PreviousGravityScale = 0.0f;
 };
