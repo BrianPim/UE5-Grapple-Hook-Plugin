@@ -118,6 +118,8 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneC
 		FRotator::ZeroRotator,
 		SpawnParams
 	);
+
+	GrapplePoint->Tags.Add(FName("Grapple Point"));
 	
 	if (!GrapplePoint->GetRootComponent())
 	{
