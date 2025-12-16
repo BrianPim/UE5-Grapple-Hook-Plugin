@@ -31,7 +31,7 @@ public:
 							   FActorComponentTickFunction* ThisTickFunction) override;
 
 	//Input Mapping Context to use
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 	
 	void SetupGrappleHookInput();
@@ -42,6 +42,7 @@ protected:
 
 	void HandleUseGrappleHook();
 
+	UFUNCTION(BlueprintCallable, Category = "Grapple Hook")
 	void CancelGrapple();
 
 	void SetupGrapplePointActor(FVector ImpactPoint, AActor* HitActor);

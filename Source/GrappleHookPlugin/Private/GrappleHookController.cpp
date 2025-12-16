@@ -64,7 +64,7 @@ void UGrappleHookController::HandleUseGrappleHook()
 	{
 		if (GrapplePoint)
 		{
-			UE_LOG(GrappleHookLog, Error, TEXT("Grapple is already active!"));
+			CancelGrapple();
 			return;
 		}
 		
@@ -132,8 +132,9 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, AActor*
 
 	GrapplePoint->SetActorLocation(ImpactPoint);
 
-	FAttachmentTransformRules AttachRules(EAttachmentRule::KeepWorld, true);
+	FAttachmentTransformRules AttachRules(EAttachmentRule::KeepRelative, true);
 	GrapplePoint->AttachToActor(HitActor, AttachRules);
+	//GrapplePoint->AttachToComponent(HitActor->GetRootComponent(), AttachRules);
 	
 	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple! %s"), *ImpactPoint.ToString());
 	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple Point: %s"), *GrapplePoint->GetActorLocation().ToString());
