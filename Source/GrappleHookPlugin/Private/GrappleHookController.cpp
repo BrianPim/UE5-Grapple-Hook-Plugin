@@ -47,6 +47,12 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 			FVector Direction = (GrapplePointPosition - PlayerPosition).GetSafeNormal();
 			MovementComponent->Velocity = Direction * GrappleSpeed;
 
+			FVector DirectionXY = Direction;
+			DirectionXY.Z = 0.0f;
+
+			FRotator TargetRotation = DirectionXY.Rotation(); // Converts vector to a rotator
+			PlayerCharacter->SetActorRotation(TargetRotation);
+
 			DrawDebugSphere(GetWorld(), GrapplePointPosition, 12.f, 16, FColor::Green, false, 0.f);
 			DrawDebugLine(GetWorld(), PlayerPosition, GrapplePointPosition, FColor::Green, false, 0.f);
 		}
@@ -135,6 +141,11 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, AActor*
 	FAttachmentTransformRules AttachRules(EAttachmentRule::KeepRelative, true);
 	GrapplePoint->AttachToActor(HitActor, AttachRules);
 	//GrapplePoint->AttachToComponent(HitActor->GetRootComponent(), AttachRules);
+
+	if (HitActor)
+	{
+		UE_LOG(GrappleHookLog, Warning, TEXT("Grapple Hit Actor: %s"), *HitActor->GetName());
+	}
 	
 	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple! %s"), *ImpactPoint.ToString());
 	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple Point: %s"), *GrapplePoint->GetActorLocation().ToString());
