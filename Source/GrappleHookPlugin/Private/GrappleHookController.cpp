@@ -133,7 +133,7 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneC
 }
 
 
-TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace()
+TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace() const
 {
 	FVector CameraLocation;
 	FRotator CameraRotation;
@@ -168,14 +168,14 @@ TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace()
 }
 
 
-bool UGrappleHookController::HasValidGrappleTarget()
+bool UGrappleHookController::HasValidGrappleTarget() const
 {
-	return !GrapplePoint && GrappleHookLineTrace().IsSet();
+	return !IsValid(GrapplePoint) && GrappleHookLineTrace().IsSet();
 }
 
-bool UGrappleHookController::IsGrappling()
+bool UGrappleHookController::IsGrappling() const
 {
-	return GrapplePoint;
+	return IsValid(GrapplePoint);
 }
 
 

@@ -39,10 +39,10 @@ public:
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is aiming at a valid target."))
-	bool HasValidGrappleTarget();
+	bool HasValidGrappleTarget() const;
 
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is currently using the Grapple Hook."))
-	bool IsGrappling();
+	bool IsGrappling() const;
 	
 	void SetupGrappleHookInput();
 
@@ -64,7 +64,7 @@ protected:
 
 	void SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent);
 
-	TOptional<FHitResult> GrappleHookLineTrace();
+	TOptional<FHitResult> GrappleHookLineTrace() const;
 
 private:
 
