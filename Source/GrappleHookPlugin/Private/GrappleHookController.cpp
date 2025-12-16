@@ -81,7 +81,7 @@ void UGrappleHookController::HandleUseGrappleHook()
 			return;
 		}
 
-		if (FHitResult* HitResult = GrappleHookLineTrace())
+		if (TOptional<FHitResult> HitResult = GrappleHookLineTrace())
 		{
 			CurrentSpeed = InitialSpeed;
 			SpeedLerpElapsed = 0.0f;
@@ -105,24 +105,6 @@ void UGrappleHookController::HandleUseGrappleHook()
 }
 
 
-void UGrappleHookController::CancelGrapple()
-{
-	if (GrapplePoint)
-	{
-		GrapplePoint->Destroy();
-		GrapplePoint = nullptr;
-	}
-
-	PlayerController->SetIgnoreMoveInput(false);
-
-	MovementComponent->SetMovementMode(MOVE_Falling);
-	MovementComponent->GravityScale = PreviousGravityScale ? PreviousGravityScale : 1.0f;
-
-	//Further functionality handled via Blueprint that references OnGrappleEnd delegate.
-	OnGrappleEnd.Broadcast();
-}
-
-
 void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent)
 {
 	FActorSpawnParameters SpawnParams;
@@ -136,28 +118,22 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneC
 		FRotator::ZeroRotator,
 		SpawnParams
 	);
-
+	
 	if (!GrapplePoint->GetRootComponent())
 	{
 		USceneComponent* Root = NewObject<USceneComponent>(GrapplePoint, TEXT("Root"));
 		Root->RegisterComponent();
 		GrapplePoint->SetRootComponent(Root);
 	}
+
+	GrapplePoint->SetActorLocation(ImpactPoint);
 	
 	FAttachmentTransformRules AttachRules(EAttachmentRule::KeepWorld, true);
 	GrapplePoint->AttachToComponent(HitComponent, AttachRules);
-
-	if (HitComponent)
-	{
-		UE_LOG(GrappleHookLog, Warning, TEXT("Grapple Hit Component: %s"), *HitComponent->GetName());
-	}
-	
-	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple! %s"), *ImpactPoint.ToString());
-	UE_LOG(GrappleHookLog, Warning, TEXT("Grapple Point: %s"), *GrapplePoint->GetActorLocation().ToString());
 }
 
 
-FHitResult* UGrappleHookController::GrappleHookLineTrace()
+TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace()
 {
 	FVector CameraLocation;
 	FRotator CameraRotation;
@@ -184,17 +160,37 @@ FHitResult* UGrappleHookController::GrappleHookLineTrace()
 	
 	if (GrappleHit)
 	{
-		return &HitResult;
+		DrawDebugLine(GetWorld(), PlayerCharacter->GetActorLocation(), HitResult.ImpactPoint, FColor::Red, false, 0.f);
+		return HitResult;
 	}
 	
-	return nullptr;
+	return {};
 }
 
 
 bool UGrappleHookController::HasValidGrappleTarget()
 {
-	return !GrapplePoint && GrappleHookLineTrace() != nullptr;
+	return !GrapplePoint && GrappleHookLineTrace().IsSet();
 }
+
+
+void UGrappleHookController::CancelGrapple()
+{
+	if (GrapplePoint)
+	{
+		GrapplePoint->Destroy();
+		GrapplePoint = nullptr;
+	}
+
+	PlayerController->SetIgnoreMoveInput(false);
+
+	MovementComponent->SetMovementMode(MOVE_Falling);
+	MovementComponent->GravityScale = PreviousGravityScale ? PreviousGravityScale : 1.0f;
+
+	//Further functionality handled via Blueprint that references OnGrappleEnd delegate.
+	OnGrappleEnd.Broadcast();
+}
+
 
 void UGrappleHookController::SetupGrappleHookInput()
 {

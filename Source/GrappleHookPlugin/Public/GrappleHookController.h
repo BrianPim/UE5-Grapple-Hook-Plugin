@@ -61,7 +61,7 @@ protected:
 
 	void SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent);
 
-	FHitResult* GrappleHookLineTrace();
+	TOptional<FHitResult> GrappleHookLineTrace();
 
 private:
 
