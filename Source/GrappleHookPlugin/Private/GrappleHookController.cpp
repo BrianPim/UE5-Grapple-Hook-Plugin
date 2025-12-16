@@ -173,6 +173,11 @@ bool UGrappleHookController::HasValidGrappleTarget()
 	return !GrapplePoint && GrappleHookLineTrace().IsSet();
 }
 
+bool UGrappleHookController::IsGrappling()
+{
+	return GrapplePoint;
+}
+
 
 void UGrappleHookController::CancelGrapple()
 {

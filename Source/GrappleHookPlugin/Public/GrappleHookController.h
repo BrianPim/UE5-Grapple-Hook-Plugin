@@ -40,6 +40,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is aiming at a valid target."))
 	bool HasValidGrappleTarget();
+
+	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is currently using the Grapple Hook."))
+	bool IsGrappling();
 	
 	void SetupGrappleHookInput();
 
