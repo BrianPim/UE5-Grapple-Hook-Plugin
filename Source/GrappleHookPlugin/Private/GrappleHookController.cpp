@@ -60,8 +60,7 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 				CurrentSpeed = FMath::Lerp(InitialSpeed, MaxSpeed, SpeedLerpElapsed / SpeedLerpDuration);
 			}
 
-			DrawDebugSphere(GetWorld(), GrapplePointPosition, 12.f, 16, FColor::Green, false, 0.f);
-			DrawDebugLine(GetWorld(), PlayerPosition, GrapplePointPosition, FColor::Green, false, 0.f);
+			DrawDebugLine(GetWorld(), PlayerPosition, GrapplePointPosition, FColor::Black, false, 0.f);
 		}
 		else
 		{
@@ -162,7 +161,6 @@ TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace() const
 	
 	if (GrappleHit)
 	{
-		DrawDebugLine(GetWorld(), PlayerCharacter->GetActorLocation(), HitResult.ImpactPoint, FColor::Red, false, 0.f);
 		return HitResult;
 	}
 	
