@@ -59,8 +59,6 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 
 				CurrentSpeed = FMath::Lerp(InitialSpeed, MaxSpeed, SpeedLerpElapsed / SpeedLerpDuration);
 			}
-
-			DrawDebugLine(GetWorld(), PlayerPosition, GrapplePointPosition, FColor::Black, false, 0.f);
 		}
 		else
 		{
@@ -176,6 +174,11 @@ bool UGrappleHookController::HasValidGrappleTarget() const
 bool UGrappleHookController::IsGrappling() const
 {
 	return IsValid(GrapplePoint);
+}
+
+AActor* UGrappleHookController::GetGrappleEndPointActor() const
+{
+	return GrapplePoint;
 }
 
 

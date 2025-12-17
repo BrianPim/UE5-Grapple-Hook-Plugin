@@ -43,6 +43,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is currently using the Grapple Hook."))
 	bool IsGrappling() const;
+
+	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Returns the point that the Player is grappling towards."))
+	AActor* GetGrappleEndPointActor() const;
 	
 	void SetupGrappleHookInput();
 
