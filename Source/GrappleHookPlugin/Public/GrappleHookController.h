@@ -127,4 +127,5 @@ private:
 	float SpeedLerpElapsed = 0.0f;
 	
 	float PreviousGravityScale = 0.0f;
+	bool PreviousYawBool = false;
 };

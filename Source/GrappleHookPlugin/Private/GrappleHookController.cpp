@@ -50,9 +50,6 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 			FVector DirectionXY = Direction;
 			DirectionXY.Z = 0.0f;
 
-			FRotator TargetRotation = DirectionXY.Rotation(); // Converts vector to a rotator
-			PlayerCharacter->SetActorRotation(TargetRotation);
-
 			if (SpeedLerpElapsed < SpeedLerpDuration)
 			{
 				SpeedLerpElapsed = FMath::Clamp(SpeedLerpElapsed + DeltaTime, 0.0f, SpeedLerpDuration);
@@ -88,6 +85,11 @@ void UGrappleHookController::HandleUseGrappleHook()
 			PlayerController->SetIgnoreMoveInput(true);
 			MovementComponent->SetMovementMode(MOVE_Flying);
 			MovementComponent->GravityScale = 0.0f;
+
+			PlayerCharacter->SetActorRotation((HitResult->ImpactPoint - PlayerCharacter->GetActorLocation()).Rotation());
+
+			PreviousYawBool = PlayerCharacter->bUseControllerRotationYaw;
+			PlayerCharacter->bUseControllerRotationYaw = false;
 			
 			SetupGrapplePointActor(HitResult->ImpactPoint, HitResult->GetComponent());
 
@@ -191,6 +193,7 @@ void UGrappleHookController::CancelGrapple()
 	}
 
 	PlayerController->SetIgnoreMoveInput(false);
+	PlayerCharacter->bUseControllerRotationYaw = PreviousYawBool ? PreviousYawBool : false;
 
 	MovementComponent->SetMovementMode(MOVE_Falling);
 	MovementComponent->GravityScale = PreviousGravityScale ? PreviousGravityScale : 1.0f;
