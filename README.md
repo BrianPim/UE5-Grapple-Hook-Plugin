@@ -10,8 +10,6 @@ A basic Grapple Hook feature with blueprint support
 ### UGrappleHookController
 Extends **UActorComponent**. Simply add as a component to your PlayerCharacter blueprint.
 
-**Note:** Assume that () used in any variable types are implemented as <>.
-
 Functions (**public**)
 - **bool** HasValidGrappleTarget()
   - **BlueprintPure**  
