@@ -8,7 +8,7 @@ A basic Grapple Hook feature with blueprint support
 ## C++ Classes
 
 ### UGrappleHookController
-Extends **UActorComponent**. Simply add as a component to your PlayerCharacter blueprint.
+Extends **UActorComponent**. Simply add as a component to your **PlayerCharacter** blueprint.
 
 Functions (**public**)
 - **bool** HasValidGrappleTarget()
