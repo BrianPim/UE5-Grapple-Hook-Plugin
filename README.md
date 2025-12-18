@@ -26,7 +26,7 @@ Functions (**protected**)
 - **void** CancelGrappleHook()
   - **BlueprintCallable**
 - **void** SetupGrapplePointActor(**FVector** ImpactPoint, **USceneComponent*** HitComponent)
-- **TOptional(FHitResult)** GrappleHookLineTrace() **const**
+- **TOptional< FHitResult >** GrappleHookLineTrace() **const**
 - **bool** CheckGrappleBlocked(**FVector** Direction) **const**
 
 Delegates (**public**)
@@ -34,8 +34,8 @@ Delegates (**public**)
 - **FGrappleEvent** OnGrappleEnd
 
 Variables (**public**)
-- **TObjectPtr(UInputAction)** ActionGrappleHook
-- **TObjectPtr(UInputMappingContext)** InputMappingContext
+- **TObjectPtr< UInputAction >** ActionGrappleHook
+- **TObjectPtr< UInputMappingContext >** InputMappingContext
     
 Variables (**private**)
 - **float** MaxGrappleRange
@@ -59,11 +59,11 @@ Variables (**private**)
 - **float** CancelIfBlockedTraceOffset
   - Offset of the Box Trace used to check if the Grapple path is blocked.
   - Modifiable from the blueprint Details panel.
-- **TObjectPtr(UEnhancedInputComponent)** EnhancedInputComponent
-- **TObjectPtr(APlayerController)** PlayerController
-- **TObjectPtr(ACharacter)** PlayerCharacter
-- **TObjectPtr(UCharacterMovementComponent)** MovementComponent
-- **TObjectPtr(AActor)** GrapplePoint
+- **TObjectPtr< UEnhancedInputComponent >** EnhancedInputComponent
+- **TObjectPtr< APlayerController >** PlayerController
+- **TObjectPtr< ACharacter >** PlayerCharacter
+- **TObjectPtr< UCharacterMovementComponent >** MovementComponent
+- **TObjectPtr< AActor >** GrapplePoint
 - **FCollisionQueryParams** GrappleCollisionQueryParams
 - **float** CurrentSpeed
 - **float** SpeedLerpElapsed
