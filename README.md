@@ -19,8 +19,8 @@ Functions (**public**)
   - **BlueprintPure**
 - **AActor*** GetGrappleEndPointActor()
   - **BlueprintPure**
- 
-- Functions (**protected**)
+
+Functions (**protected**)
 - **void** SetupGrappleHook()
 - **void** UseGrappleHook()
 - **void** CancelGrappleHook()
@@ -28,7 +28,7 @@ Functions (**public**)
 - **void** SetupGrapplePointActor(**FVector** ImpactPoint, **USceneComponent*** HitComponent)
 - **TOptional(FHitResult)** GrappleHookLineTrace() **const**
 - **bool** CheckGrappleBlocked(**FVector** Direction) **const**
-    
+
 Delegates (**public**)
 - **FGrappleEvent** OnGrappleStart
 - **FGrappleEvent** OnGrappleEnd
