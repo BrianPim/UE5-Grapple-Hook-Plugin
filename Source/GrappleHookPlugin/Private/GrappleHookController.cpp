@@ -38,23 +38,26 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (PlayerPawn && GrapplePoint)
+	if (GrapplePoint)
 	{
-		if (FVector::Dist(PlayerPawn->GetActorTransform().GetLocation(), GrapplePoint->GetActorTransform().GetLocation()) > ReleaseRange)
+		if (FVector::Dist(PlayerCharacter->GetActorTransform().GetLocation(), GrapplePoint->GetActorTransform().GetLocation()) > ReleaseRange)
 		{
 			FVector GrapplePointPosition = GrapplePoint->GetActorLocation();
 			FVector PlayerPosition = PlayerCharacter->GetActorLocation();
 			FVector Direction = (GrapplePointPosition - PlayerPosition).GetSafeNormal();
-			MovementComponent->Velocity = Direction * CurrentSpeed;
 
-			FVector DirectionXY = Direction;
-			DirectionXY.Z = 0.0f;
+			MovementComponent->Velocity = Direction * CurrentSpeed;
 
 			if (SpeedLerpElapsed < SpeedLerpDuration)
 			{
 				SpeedLerpElapsed = FMath::Clamp(SpeedLerpElapsed + DeltaTime, 0.0f, SpeedLerpDuration);
 
 				CurrentSpeed = FMath::Lerp(InitialSpeed, MaxSpeed, SpeedLerpElapsed / SpeedLerpDuration);
+			}
+
+			if (CancelIfBlocked && CheckGrappleBlocked(Direction))
+			{
+				CancelGrapple();
 			}
 		}
 		else
@@ -148,15 +151,12 @@ TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace() const
 	FVector CastStart = CameraLocation;
 	FVector CastEnd = CameraLocation + Normal * MaxGrappleRange;
 
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(PlayerPawn);
-
 	bool GrappleHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		CastStart,
 		CastEnd,
 		ECC_Visibility,
-		Params
+		GrappleCollisionQueryParams
 	);
 	
 	if (GrappleHit)
@@ -165,6 +165,26 @@ TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace() const
 	}
 	
 	return {};
+}
+
+bool UGrappleHookController::CheckGrappleBlocked(FVector Direction) const
+{
+	//Divided by 2 because MakeBox creates the shape from center to edge, instead of edge to edge.
+	FCollisionShape MyBox = FCollisionShape::MakeBox(CancelIfBlockedTraceDimensions / 2);
+
+	FHitResult HitResult;
+	
+	bool Hit = GetWorld()->SweepSingleByChannel(
+		HitResult,
+		PlayerCharacter->GetActorLocation(),
+		PlayerCharacter->GetActorLocation() + Direction * CancelIfBlockedTraceOffset,
+		FQuat::Identity,
+		ECC_Visibility,
+		MyBox,
+		GrappleCollisionQueryParams
+	);
+
+	return Hit;
 }
 
 
@@ -186,11 +206,13 @@ AActor* UGrappleHookController::GetGrappleEndPointActor() const
 
 void UGrappleHookController::CancelGrapple()
 {
-	if (GrapplePoint)
+	if (!GrapplePoint)
 	{
-		GrapplePoint->Destroy();
-		GrapplePoint = nullptr;
+		return;
 	}
+
+	GrapplePoint->Destroy();
+	GrapplePoint = nullptr;
 
 	PlayerController->SetIgnoreMoveInput(false);
 	PlayerCharacter->bUseControllerRotationYaw = PreviousYawBool ? PreviousYawBool : false;
@@ -233,7 +255,8 @@ void UGrappleHookController::SetupGrappleHookInput()
 	
 	checkf(InputMappingContext, TEXT("InputMappingContext was not specified"));
 	InputSubsystem->AddMappingContext(InputMappingContext, 0);
-	
+
+	GrappleCollisionQueryParams.AddIgnoredActor(PlayerPawn);
 
 	//Bind input action, only attempt to bind if valid value was provided
 	if (ActionGrappleHook)

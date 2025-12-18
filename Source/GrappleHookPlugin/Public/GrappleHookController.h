@@ -68,6 +68,8 @@ protected:
 	void SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent);
 
 	TOptional<FHitResult> GrappleHookLineTrace() const;
+	
+	bool CheckGrappleBlocked(FVector Direction) const;
 
 private:
 
@@ -77,6 +79,13 @@ private:
 	static constexpr float BaseInitialSpeed = 500.0f;
 	static constexpr float BaseSpeedLerpDuration = 1.0f;
 	static constexpr float BaseReleaseRange = 100.0f;
+
+	static constexpr float BaseCancelIfBlockedX = 50.0f;
+	static constexpr float BaseCancelIfBlockedY = 50.0f;
+	static constexpr float BaseCancelIfBlockedZ = 100.0f;
+	static constexpr float BaseCancelIfBlockedOffset = 100.0f;
+	
+	static constexpr bool BaseCancelIfBlocked = true;
 
 	//Grapple Range value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
@@ -97,6 +106,18 @@ private:
 	//Grapple Release Range value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float ReleaseRange = BaseReleaseRange;
+
+	//Whether or not the Grapple will auto-cancel if there's an object in front of the Player, can be modified via BP
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
+	bool CancelIfBlocked = BaseCancelIfBlocked;
+
+	//Dimensions of the Box Trace used to check if the Grapple vector is blocked, can be modified via BP
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true", EditCondition = "CancelIfBlocked"))
+	FVector CancelIfBlockedTraceDimensions = FVector(BaseCancelIfBlockedX, BaseCancelIfBlockedY, BaseCancelIfBlockedZ);
+
+	//Offset of the Box Trace used to check if the Grapple vector is blocked, can be modified via BP
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true", EditCondition = "CancelIfBlocked"))
+	float CancelIfBlockedTraceOffset = BaseCancelIfBlockedOffset;
 
 	//Used to store a reference to the InputComponent cast to an EnhancedInputComponent
 	UPROPERTY()
@@ -122,6 +143,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<AActor> GrapplePoint = nullptr;
 
+	FCollisionQueryParams GrappleCollisionQueryParams;
 
 	float CurrentSpeed = InitialSpeed;
 	float SpeedLerpElapsed = 0.0f;
