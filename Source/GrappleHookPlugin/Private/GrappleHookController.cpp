@@ -9,17 +9,13 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
-#include "Kismet/KismetMathLibrary.h"
 
+//Definitions
 class UEnhancedInputLocalPlayerSubsystem;
-// Sets default values for this component's properties
+
 UGrappleHookController::UGrappleHookController()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
 }
 
 
@@ -28,16 +24,16 @@ void UGrappleHookController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//Initial Grapple Hook setup.
 	SetupGrappleHookInput();
 }
 
 
 // Called every frame
-void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
-										   FActorComponentTickFunction* ThisTickFunction)
+void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	
 	if (GrapplePoint)
 	{
 		if (FVector::Dist(PlayerCharacter->GetActorTransform().GetLocation(), GrapplePoint->GetActorTransform().GetLocation()) > ReleaseRange)
@@ -46,15 +42,17 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 			FVector PlayerPosition = PlayerCharacter->GetActorLocation();
 			FVector Direction = (GrapplePointPosition - PlayerPosition).GetSafeNormal();
 
+			//Setting the velocity of the Player's MoveComponent as long as they have an active GrapplePoint.
 			MovementComponent->Velocity = Direction * CurrentSpeed;
 
+			//Accelerates from the initial speed to the maximum speed.
 			if (SpeedLerpElapsed < SpeedLerpDuration)
 			{
 				SpeedLerpElapsed = FMath::Clamp(SpeedLerpElapsed + DeltaTime, 0.0f, SpeedLerpDuration);
-
 				CurrentSpeed = FMath::Lerp(InitialSpeed, MaxSpeed, SpeedLerpElapsed / SpeedLerpDuration);
 			}
 
+			//If the path is blocked, cancel the Grapple action.
 			if (CancelIfBlocked && CheckGrappleBlocked(Direction))
 			{
 				CancelGrapple();
@@ -62,51 +60,57 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 		}
 		else
 		{
+			//Cancel the Grapple action if we've reached the destination.
 			CancelGrapple();
 		}
 	}
 }
 
-
+//Checks to see if the Player is aiming at a valid Grapple target; and if they are, initiates the Grapple action.
 void UGrappleHookController::HandleUseGrappleHook()
 {
-	if (PlayerPawn && PlayerController)
+	//Return if there's already a point being Grappled towards.
+	if (GrapplePoint)
 	{
-		if (GrapplePoint)
-		{
-			CancelGrapple();
-			return;
-		}
+		CancelGrapple();
+		return;
+	}
 
-		if (TOptional<FHitResult> HitResult = GrappleHookLineTrace())
-		{
-			CurrentSpeed = InitialSpeed;
-			SpeedLerpElapsed = 0.0f;
+	if (TOptional<FHitResult> HitResult = GrappleHookLineTrace())
+	{
+		CurrentSpeed = InitialSpeed;
+		SpeedLerpElapsed = 0.0f;
+
+		//Caches the current Gravity Scale so that we can reset it after the Grapple is done.
+		PreviousGravityScale = MovementComponent->GravityScale;
+
+		PlayerController->SetIgnoreMoveInput(true);
+		MovementComponent->SetMovementMode(MOVE_Flying);
+		MovementComponent->GravityScale = 0.0f;
+
+		PlayerCharacter->SetActorRotation((HitResult->ImpactPoint - PlayerCharacter->GetActorLocation()).Rotation());
+
+		//Caches current Controller Rotation Yaw value and then sets to false so that the character doesn't rotate away
+		//from the grapple point mid-action.
+		PreviousYawBool = PlayerCharacter->bUseControllerRotationYaw;
+		PlayerCharacter->bUseControllerRotationYaw = false;
 			
-			PreviousGravityScale = MovementComponent->GravityScale;
+		SetupGrapplePointActor(HitResult->ImpactPoint, HitResult->GetComponent());
 
-			PlayerController->SetIgnoreMoveInput(true);
-			MovementComponent->SetMovementMode(MOVE_Flying);
-			MovementComponent->GravityScale = 0.0f;
-
-			PlayerCharacter->SetActorRotation((HitResult->ImpactPoint - PlayerCharacter->GetActorLocation()).Rotation());
-
-			PreviousYawBool = PlayerCharacter->bUseControllerRotationYaw;
-			PlayerCharacter->bUseControllerRotationYaw = false;
-			
-			SetupGrapplePointActor(HitResult->ImpactPoint, HitResult->GetComponent());
-
-			//Further functionality handled via Blueprint that references OnGrappleStart delegate.
-			OnGrappleStart.Broadcast();
-		}
-		else
-		{
-			UE_LOG(GrappleHookLog, Error, TEXT("No Grapple Hit!"));
-		}
+		//Further functionality handled via Blueprint that references OnGrappleStart delegate.
+		OnGrappleStart.Broadcast();
+	}
+	else
+	{
+		UE_LOG(GrappleHookLog, Error, TEXT("No Grapple Hit!"));
 	}
 }
 
-
+//Spawns a blank Actor with a Root Component to act as the end of the Grapple Hook.
+//We use an Actor and attach it to the provided SceneComponent in order to actively track
+//the surface hit by the Grapple Hook (in case it's a moving object).
+//
+//In the future we may want to spawn an actual Actor BP instead for visuals.
 void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent)
 {
 	FActorSpawnParameters SpawnParams;
@@ -121,6 +125,7 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneC
 		SpawnParams
 	);
 
+	//Currently un-used, but may be useful to have in some cases in the future.
 	GrapplePoint->Tags.Add(FName("Grapple Point"));
 	
 	if (!GrapplePoint->GetRootComponent())
@@ -130,13 +135,15 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneC
 		GrapplePoint->SetRootComponent(Root);
 	}
 
+	//Setting the Grapple's location here, as setting it before it has a registered Root doesn't actually do anything.
 	GrapplePoint->SetActorLocation(ImpactPoint);
-	
+
+	//Attaching the GrapplePoint to the provided SceneComponent so that it actively tracks where the Grapple Hook hit.
 	FAttachmentTransformRules AttachRules(EAttachmentRule::KeepWorld, true);
 	GrapplePoint->AttachToComponent(HitComponent, AttachRules);
 }
 
-
+//Draws a Line Trace to check if the Player is aiming towards a valid Object to Grapple to.
 TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace() const
 {
 	FVector CameraLocation;
@@ -167,6 +174,7 @@ TOptional<FHitResult> UGrappleHookController::GrappleHookLineTrace() const
 	return {};
 }
 
+//Draws a Box Trace in the provided direction, returns true if anything is detected within the box.
 bool UGrappleHookController::CheckGrappleBlocked(FVector Direction) const
 {
 	//Divided by 2 because MakeBox creates the shape from center to edge, instead of edge to edge.
@@ -187,23 +195,25 @@ bool UGrappleHookController::CheckGrappleBlocked(FVector Direction) const
 	return Hit;
 }
 
-
+//Returns whether whatever the player is aiming at is a valid Grapple Target or not.
 bool UGrappleHookController::HasValidGrappleTarget() const
 {
 	return !IsValid(GrapplePoint) && GrappleHookLineTrace().IsSet();
 }
 
+//Returns if GrapplePoint is valid.
 bool UGrappleHookController::IsGrappling() const
 {
 	return IsValid(GrapplePoint);
 }
 
+//Returns GrapplePoint.
 AActor* UGrappleHookController::GetGrappleEndPointActor() const
 {
 	return GrapplePoint;
 }
 
-
+//Cancels the Grapple action and resets values.
 void UGrappleHookController::CancelGrapple()
 {
 	if (!GrapplePoint)
@@ -224,31 +234,25 @@ void UGrappleHookController::CancelGrapple()
 	OnGrappleEnd.Broadcast();
 }
 
-
+//Initial Grapple Hook Setup.
 void UGrappleHookController::SetupGrappleHookInput()
 {
-	//Store a reference to the Player's Pawn
-	PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	checkf(PlayerPawn, TEXT("Unable to get reference to the Local Player's Character Pawn"));
-
-	//Store a reference to the Player's PlayerController
-	PlayerController = Cast<APlayerController>(PlayerPawn->GetController());
-	checkf(PlayerController, TEXT("Unable to get reference to the Local Player's PlayerController"));
-
-	PlayerCharacter = Cast<ACharacter>(PlayerPawn);
+	//Assignments and checks
+	PlayerCharacter = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	checkf(PlayerCharacter, TEXT("Unable to get reference to the Local Player's Character"));
+
+	PlayerController = Cast<APlayerController>(PlayerCharacter->GetController());
+	checkf(PlayerController, TEXT("Unable to get reference to the Local Player's PlayerController"));
 
 	MovementComponent = PlayerCharacter->GetCharacterMovement();
 	checkf(MovementComponent, TEXT("Unable to get reference to the Local Player's CharacterMovementComponent"));
-	
-	//Get Local Player
-	TObjectPtr<ULocalPlayer> LocalPlayer = PlayerController->GetLocalPlayer();
 
-	//Get a reference to the EnhancedInputComponent
 	EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerController->InputComponent);
 	checkf(EnhancedInputComponent, TEXT("Unable to get reference to the EnhancedInputComponent"));
+	
+	TObjectPtr<ULocalPlayer> LocalPlayer = PlayerController->GetLocalPlayer();
 
-	//Adding the grapple InputMappingContext to the Player
+	//Adding the Grapple InputMappingContext to the Player.
 	TObjectPtr<UEnhancedInputLocalPlayerSubsystem> InputSubsystem =
 		LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
 	checkf(InputSubsystem, TEXT("Unable to get reference to the EnhancedInputLocalPlayerSubsystem"));
@@ -256,9 +260,9 @@ void UGrappleHookController::SetupGrappleHookInput()
 	checkf(InputMappingContext, TEXT("InputMappingContext was not specified"));
 	InputSubsystem->AddMappingContext(InputMappingContext, 0);
 
-	GrappleCollisionQueryParams.AddIgnoredActor(PlayerPawn);
+	GrappleCollisionQueryParams.AddIgnoredActor(PlayerCharacter);
 
-	//Bind input action, only attempt to bind if valid value was provided
+	//Bind input action, only attempt to bind if valid value was provided.
 	if (ActionGrappleHook)
 	{
 		EnhancedInputComponent->BindAction(ActionGrappleHook, ETriggerEvent::Triggered, this, &UGrappleHookController::HandleUseGrappleHook);

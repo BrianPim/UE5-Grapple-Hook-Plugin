@@ -6,13 +6,13 @@
 #include "Components/ActorComponent.h"
 #include "GrappleHookController.generated.h"
 
-
+//Definitions
 class UCharacterMovementComponent;
 class UInputMappingContext;
 class UInputAction;
 
 
-//Delegate for weapon being fired.
+//Delegate for Grapple events.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FGrappleEvent);
 
 
@@ -30,29 +30,35 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 							   FActorComponentTickFunction* ThisTickFunction) override;
 
-	//Input Action to map to grapple hook
+	//Input Action to map to Grapple.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
 	TObjectPtr<UInputAction> ActionGrappleHook = nullptr;
 	
-	//Input Mapping Context to use
+	//Input Mapping Context to use.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 
+	//Returns whether whatever the player is aiming at is a valid Grapple Target or not.
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is aiming at a valid target."))
 	bool HasValidGrappleTarget() const;
 
+	//Returns if GrapplePoint is valid.
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is currently using the Grapple Hook."))
 	bool IsGrappling() const;
 
+	//Returns GrapplePoint.
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Returns the point that the Player is grappling towards."))
 	AActor* GetGrappleEndPointActor() const;
-	
+
+	//Initial Grapple Hook Setup.
 	void SetupGrappleHookInput();
 
 	//Delegates
+	//Fires in HandleUseGrappleHook.
 	UPROPERTY(BlueprintAssignable, Category = "Grapple Hook", meta = (ToolTip = "Hook up additional functionality to this."))
 	FGrappleEvent OnGrappleStart;
 
+	//Fires in CancelGrapple.
 	UPROPERTY(BlueprintAssignable, Category = "Grapple Hook", meta = (ToolTip = "Hook up additional functionality to this."))
 	FGrappleEvent OnGrappleEnd;
 	
@@ -60,15 +66,20 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	//Initiates the Grapple action.
 	void HandleUseGrappleHook();
 
+	//Cancels the Grapple action.
 	UFUNCTION(BlueprintCallable, Category = "Grapple Hook")
 	void CancelGrapple();
 
+	//Spawns and attaches the end of the Grapple Hook to the destination object.
 	void SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent);
 
+	//Checks if the Player is aiming towards a valid Object to Grapple to.
 	TOptional<FHitResult> GrappleHookLineTrace() const;
-	
+
+	//Checks if there's an object in the way of the Grapple path.
 	bool CheckGrappleBlocked(FVector Direction) const;
 
 private:
@@ -91,15 +102,15 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float MaxGrappleRange = BaseMaxGrappleRange;
 
-	//Grapple Speed value, can be modified via BP
+	//Grapple Max Speed value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float MaxSpeed = BaseMaxSpeed;
 
-	//Grapple Speed value, can be modified via BP
+	//Grapple Initial Speed value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float InitialSpeed = BaseInitialSpeed;
 
-	//Grapple Speed value, can be modified via BP
+	//Grapple Speed Lerp (Acceleration) value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float SpeedLerpDuration = BaseSpeedLerpDuration;
 
@@ -126,10 +137,6 @@ private:
 	//Used to store a reference to the Player's PlayerController
 	UPROPERTY()
 	TObjectPtr<APlayerController> PlayerController = nullptr;
-	
-	//Used to store a reference to the Pawn we are controlling
-	UPROPERTY()
-	TObjectPtr<APawn> PlayerPawn = nullptr;
 
 	//Used to store a reference to the Character we are controlling
 	UPROPERTY()
@@ -143,6 +150,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<AActor> GrapplePoint = nullptr;
 
+	//CollisionQueryParams that determine valid objects to consider in valid Grapple target determination (currently only excludes PlayerCharacter)
 	FCollisionQueryParams GrappleCollisionQueryParams;
 
 	float CurrentSpeed = InitialSpeed;
