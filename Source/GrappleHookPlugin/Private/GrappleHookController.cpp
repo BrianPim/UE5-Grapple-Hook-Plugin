@@ -25,7 +25,7 @@ void UGrappleHookController::BeginPlay()
 	Super::BeginPlay();
 
 	//Initial Grapple Hook setup.
-	SetupGrappleHookInput();
+	SetupGrappleHook();
 }
 
 
@@ -67,7 +67,7 @@ void UGrappleHookController::TickComponent(float DeltaTime, ELevelTick TickType,
 }
 
 //Checks to see if the Player is aiming at a valid Grapple target; and if they are, initiates the Grapple action.
-void UGrappleHookController::HandleUseGrappleHook()
+void UGrappleHookController::UseGrappleHook()
 {
 	//Return if there's already a point being Grappled towards.
 	if (GrapplePoint)
@@ -84,6 +84,7 @@ void UGrappleHookController::HandleUseGrappleHook()
 		//Caches the current Gravity Scale so that we can reset it after the Grapple is done.
 		PreviousGravityScale = MovementComponent->GravityScale;
 
+		//Ignoring Move Input b/c we don't want the player to be able to move during the Grapple (may revisit this).
 		PlayerController->SetIgnoreMoveInput(true);
 		MovementComponent->SetMovementMode(MOVE_Flying);
 		MovementComponent->GravityScale = 0.0f;
@@ -235,7 +236,7 @@ void UGrappleHookController::CancelGrapple()
 }
 
 //Initial Grapple Hook Setup.
-void UGrappleHookController::SetupGrappleHookInput()
+void UGrappleHookController::SetupGrappleHook()
 {
 	//Assignments and checks
 	PlayerCharacter = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
@@ -265,7 +266,7 @@ void UGrappleHookController::SetupGrappleHookInput()
 	//Bind input action, only attempt to bind if valid value was provided.
 	if (ActionGrappleHook)
 	{
-		EnhancedInputComponent->BindAction(ActionGrappleHook, ETriggerEvent::Triggered, this, &UGrappleHookController::HandleUseGrappleHook);
+		EnhancedInputComponent->BindAction(ActionGrappleHook, ETriggerEvent::Triggered, this, &UGrappleHookController::UseGrappleHook);
 	}
 	else
 	{

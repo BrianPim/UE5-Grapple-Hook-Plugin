@@ -29,15 +29,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 							   FActorComponentTickFunction* ThisTickFunction) override;
-
-	//Input Action to map to Grapple.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
-	TObjectPtr<UInputAction> ActionGrappleHook = nullptr;
 	
-	//Input Mapping Context to use.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
-	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
-
 	//Returns whether whatever the player is aiming at is a valid Grapple Target or not.
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Whether or not the Player is aiming at a valid target."))
 	bool HasValidGrappleTarget() const;
@@ -49,9 +41,14 @@ public:
 	//Returns GrapplePoint.
 	UFUNCTION(BlueprintPure, Category = "Grapple Hook", meta = (ToolTip = "Returns the point that the Player is grappling towards."))
 	AActor* GetGrappleEndPointActor() const;
-
-	//Initial Grapple Hook Setup.
-	void SetupGrappleHookInput();
+	
+	//Input Action to map to Grapple.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
+	TObjectPtr<UInputAction> ActionGrappleHook = nullptr;
+	
+	//Input Mapping Context to use.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grapple Hook")
+	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 
 	//Delegates
 	//Fires in HandleUseGrappleHook.
@@ -66,8 +63,11 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	//Initial Grapple Hook Setup.
+	void SetupGrappleHook();
+
 	//Initiates the Grapple action.
-	void HandleUseGrappleHook();
+	void UseGrappleHook();
 
 	//Cancels the Grapple action.
 	UFUNCTION(BlueprintCallable, Category = "Grapple Hook")
