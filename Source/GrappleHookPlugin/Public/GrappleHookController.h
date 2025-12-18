@@ -91,9 +91,9 @@ private:
 	static constexpr float BaseSpeedLerpDuration = 1.0f;
 	static constexpr float BaseReleaseRange = 100.0f;
 
-	static constexpr float BaseCancelIfBlockedX = 50.0f;
-	static constexpr float BaseCancelIfBlockedY = 50.0f;
-	static constexpr float BaseCancelIfBlockedZ = 100.0f;
+	static constexpr float BaseCancelIfBlockedX = 30.0f;
+	static constexpr float BaseCancelIfBlockedY = 30.0f;
+	static constexpr float BaseCancelIfBlockedZ = 75.0f;
 	static constexpr float BaseCancelIfBlockedOffset = 100.0f;
 	
 	static constexpr bool BaseCancelIfBlocked = true;
