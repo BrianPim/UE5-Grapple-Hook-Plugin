@@ -99,43 +99,43 @@ private:
 	
 	static constexpr bool BaseCancelIfBlocked = true;
 
-	//Actor used to represent the end of the Grapple Hook
+	//Class of the Actor BP used to represent the end of the Grapple Hook
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	UClass* GrappleEndPointActor = nullptr;
 	
-	//Grapple Range value, can be modified via BP
+	//How far away a Grapple can be initiated.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float MaxGrappleRange = BaseMaxGrappleRange;
 
-	//Grapple Max Speed value, can be modified via BP
+	//Maximum Velocity that the Player can reach while Grappling.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float MaxSpeed = BaseMaxSpeed;
 
-	//Grapple Initial Speed value, can be modified via BP
+	//Velocity that the Player starts at when Grappling.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float InitialSpeed = BaseInitialSpeed;
 
-	//Grapple Speed Lerp (Acceleration) value, can be modified via BP
+	//The time it takes to go from InitialSpeed to MaxSpeed.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float SpeedLerpDuration = BaseSpeedLerpDuration;
 
-	//Grapple Release Range value, can be modified via BP
+	//The distance from the end of the Grapple path where the Grapple action is cancelled.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float ReleaseRange = BaseReleaseRange;
 
-	//What we multiply the CurrentSpeed by to apply an impulse after the grapple ends (can be set to 0 to instantly kill velocity), can be modified via BP
+	//What we multiply the CurrentSpeed by to apply an impulse after the grapple ends (can be set to 0 to instantly kill velocity)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float ReleaseVelocityMultiplier = BaseReleaseVelocityMultiplier;
 
-	//Whether or not the Grapple will auto-cancel if there's an object in front of the Player, can be modified via BP
+	//Whether or not the Grapple will auto-cancel if there's an object in front of the Player
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	bool CancelIfBlocked = BaseCancelIfBlocked;
 
-	//Dimensions of the Box Trace used to check if the Grapple vector is blocked, can be modified via BP
+	//Dimensions of the Box Trace used to check if the Grapple vector is blocked
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true", EditCondition = "CancelIfBlocked"))
 	FVector CancelIfBlockedTraceDimensions = FVector(BaseCancelIfBlockedX, BaseCancelIfBlockedY, BaseCancelIfBlockedZ);
 
-	//Offset of the Box Trace used to check if the Grapple vector is blocked, can be modified via BP
+	//Offset of the Box Trace used to check if the Grapple vector is blocked
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true", EditCondition = "CancelIfBlocked"))
 	float CancelIfBlockedTraceOffset = BaseCancelIfBlockedOffset;
 
