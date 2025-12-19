@@ -90,6 +90,7 @@ private:
 	static constexpr float BaseInitialSpeed = 500.0f;
 	static constexpr float BaseSpeedLerpDuration = 1.0f;
 	static constexpr float BaseReleaseRange = 100.0f;
+	static constexpr float BaseReleaseVelocityMultiplier = 0.5f;
 
 	static constexpr float BaseCancelIfBlockedX = 30.0f;
 	static constexpr float BaseCancelIfBlockedY = 30.0f;
@@ -98,6 +99,10 @@ private:
 	
 	static constexpr bool BaseCancelIfBlocked = true;
 
+	//Actor used to represent the end of the Grapple Hook
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
+	UClass* GrappleEndPointActor = nullptr;
+	
 	//Grapple Range value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float MaxGrappleRange = BaseMaxGrappleRange;
@@ -117,6 +122,10 @@ private:
 	//Grapple Release Range value, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
 	float ReleaseRange = BaseReleaseRange;
+
+	//What we multiply the CurrentSpeed by to apply an impulse after the grapple ends (can be set to 0 to instantly kill velocity), can be modified via BP
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))
+	float ReleaseVelocityMultiplier = BaseReleaseVelocityMultiplier;
 
 	//Whether or not the Grapple will auto-cancel if there's an object in front of the Player, can be modified via BP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grapple Hook", meta = (AllowPrivateAccess = "true"))

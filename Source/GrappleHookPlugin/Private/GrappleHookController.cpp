@@ -107,11 +107,8 @@ void UGrappleHookController::UseGrappleHook()
 	}
 }
 
-//Spawns a blank Actor with a Root Component to act as the end of the Grapple Hook.
-//We use an Actor and attach it to the provided SceneComponent in order to actively track
+//Spawns an Actor to act as the end of the Grapple Hook. We use an Actor and attach it to the provided SceneComponent in order to actively track
 //the surface hit by the Grapple Hook (in case it's a moving object).
-//
-//In the future we may want to spawn an actual Actor BP instead for visuals.
 void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent)
 {
 	FActorSpawnParameters SpawnParams;
@@ -120,11 +117,10 @@ void UGrappleHookController::SetupGrapplePointActor(FVector ImpactPoint, USceneC
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	GrapplePoint = GetWorld()->SpawnActor<AActor>(
-		AActor::StaticClass(),
+		GrappleEndPointActor != nullptr ? GrappleEndPointActor : AActor::StaticClass(),
 		ImpactPoint,
 		FRotator::ZeroRotator,
-		SpawnParams
-	);
+		SpawnParams);
 
 	//Currently un-used, but may be useful to have in some cases in the future.
 	GrapplePoint->Tags.Add(FName("Grapple Point"));
@@ -222,6 +218,11 @@ void UGrappleHookController::CancelGrapple()
 		return;
 	}
 
+	FVector GrapplePointPosition = GrapplePoint->GetActorLocation();
+	FVector PlayerPosition = PlayerCharacter->GetActorLocation();
+	FVector Direction = (GrapplePointPosition - PlayerPosition).GetSafeNormal();
+
+	//Reset values.
 	GrapplePoint->Destroy();
 	GrapplePoint = nullptr;
 
@@ -230,6 +231,9 @@ void UGrappleHookController::CancelGrapple()
 
 	MovementComponent->SetMovementMode(MOVE_Falling);
 	MovementComponent->GravityScale = PreviousGravityScale ? PreviousGravityScale : 1.0f;
+
+	//Adding an impulse here to simulate the Player continuing to move along the Grapple path for a short time.
+	MovementComponent->AddImpulse(Direction * CurrentSpeed * ReleaseVelocityMultiplier,true);
 
 	//Further functionality handled via Blueprint that references OnGrappleEnd delegate.
 	OnGrappleEnd.Broadcast();
