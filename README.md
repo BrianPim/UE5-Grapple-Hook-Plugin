@@ -8,7 +8,7 @@ A basic Grapple Hook feature with blueprint support
 ## C++ Classes
 
 ### UGrappleHookController
-Extends **UActorComponent**. Simply add as a component to your **PlayerCharacter** blueprint.
+Extends **UActorComponent**. Simply add as a component to your **PlayerCharacter** blueprint to get started!
 
 Functions (**public**)
 - **bool** HasValidGrappleTarget()
@@ -36,17 +36,26 @@ Variables (**public**)
 - **TObjectPtr< UInputMappingContext >** InputMappingContext
     
 Variables (**private**)
+- **UClass*** GrappleEndPointActor
+  - Class of the Actor BP used to represent the end of the Grapple Hook
+  - Modifiable from the blueprint Details panel.
 - **float** MaxGrappleRange
+  - How far away a Grapple can be initiated.
   - Modifiable from the blueprint Details panel.
 - **float** MaxSpeed
+  - Maximum Velocity that the Player can reach while Grappling.
   - Modifiable from the blueprint Details panel.
 - **float** InitialSpeed
+  -Velocity that the Player starts at when Grappling.
   - Modifiable from the blueprint Details panel.
 - **float** SpeedLerpDuration
-  - The time it takes to accelerate to MaxSpeed.
+  - The time it takes to go from InitialSpeed to MaxSpeed.
   - Modifiable from the blueprint Details panel.
 - **float** ReleaseRange
-  - The distance from the Grapple destination at which the Grapple will be cancelled.
+  - The distance from the end of the Grapple path where the Grapple action is cancelled.
+  - Modifiable from the blueprint Details panel.
+- **float** ReleaseVelocityMultiplier
+  - What we multiply the CurrentSpeed by to apply an impulse after the grapple ends (can be set to 0 to instantly kill velocity)
   - Modifiable from the blueprint Details panel.
 - **bool** CancelIfBlocked
   - Whether or not the Grapple will auto-cancel if there's an object blocking the Grapple path.
