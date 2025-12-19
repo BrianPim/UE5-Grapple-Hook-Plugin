@@ -69,10 +69,6 @@ protected:
 	//Initiates the Grapple action.
 	void UseGrappleHook();
 
-	//Cancels the Grapple action.
-	UFUNCTION(BlueprintCallable, Category = "Grapple Hook")
-	void CancelGrapple();
-
 	//Spawns and attaches the end of the Grapple Hook to the destination object.
 	void SetupGrapplePointActor(FVector ImpactPoint, USceneComponent* HitComponent);
 
@@ -81,6 +77,10 @@ protected:
 
 	//Checks if there's an object in the way of the Grapple path.
 	bool CheckGrappleBlocked(FVector Direction) const;
+
+	//Cancels the Grapple action.
+	UFUNCTION(BlueprintCallable, Category = "Grapple Hook")
+	void CancelGrapple();
 
 private:
 
