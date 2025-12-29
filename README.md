@@ -77,7 +77,7 @@ Variables (**private**)
 - **float** PreviousGravityScale
 - **bool** PreviousYawBool
   
-## Included Content & Blueprints of Note
+## Included Content & Blueprints
 
 ### ThirdPerson Folder
 Contains a modified Player Character taken from Unreal's default third person project. Grapple Hook component has already been added, and code has been added to the **Event Graph** to implement features such as custom animations, a CableActor, and the included UI widget.
